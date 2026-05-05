@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>母親節卡片</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #5b1638, #1b0613 55%, #070207);
+      font-family: "Microsoft JhengHei", sans-serif;
+      cursor: pointer;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    .text {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      width: min(520px, 88vw);
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: white;
+      pointer-events: none;
+      z-index: 5;
+      padding: 0 20px;
+      animation: fadeIn 2s ease forwards;
+    }
+
+    h1 {
+      font-size: clamp(34px, 5vw, 54px);
+      margin: 0 0 12px;
+      color: #ffd6e8;
+      text-shadow:
+        0 0 10px #ff8fbd,
+        0 0 25px #ff5f9f,
+        0 0 45px #ff2f7d;
+      letter-spacing: 4px;
+    }
+
+    p {
+      font-size: clamp(17px, 2vw, 22px);
+      line-height: 1.8;
+      color: #fff3f8;
+      text-shadow:
+        0 0 10px rgba(0, 0, 0, 0.7),
+        0 0 18px rgba(255, 170, 210, 0.9);
+      margin: 8px 0;
+    }
+
+    #blessing {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transform: translateY(12px);
+      transition: 0.8s;
+    }
+
+    #blessing.show {
+      opacity: 1;
+      max-height: 220px;
+      transform: translateY(0);
+    }
+
+    .button {
+      position: fixed;
+      left: 50%;
+      bottom: 55px;
+      transform: translateX(-50%);
+      padding: 14px 32px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 220, 235, 0.8);
+      color: white;
+      background: rgba(255, 120, 170, 0.28);
+      backdrop-filter: blur(8px);
+      box-shadow:
+        0 0 15px rgba(255, 130, 180, 0.7),
+        inset 0 0 12px rgba(255, 255, 255, 0.25);
+      font-size: 17px;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: 0.3s;
+      z-index: 10;
+    }
+
+    .button:hover {
+      background: rgba(255, 145, 190, 0.45);
+      transform: translateX(-50%) scale(1.06);
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 22px;
+      width: 100%;
+      text-align: center;
+      color: rgba(255, 230, 240, 0.65);
+      font-size: 13px;
+      letter-spacing: 2px;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translate(-50%, -45%);
+      }
+
+      to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div class="text">
+    <h1>母親節快樂</h1>
+
+    <p>
+      我漂亮的媽咪<br>
+    </p>
+
+    <p id="blessing">
+      今天依舊愛妳<br>
+      祝妳身體健康<br>
+      願妳生活平安<br>
+      祝妳在以後的日子裡<br>
+      都能被溫柔包圍
+      愛妳♥
+    </p>
+  </div>
+
+  <button class="button" id="btn">打開祝福</button>
+  <div class="hint">Happy Mother's Day</div>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const btn = document.getElementById("btn");
+    const blessing = document.getElementById("blessing");
+
+    let w;
+    let h;
+    let cx;
+    let cy;
+
+    let isOpen = false;
+    let heartParticles = [];
+    let floatingDots = [];
+    let sparkles = [];
+    let clickHearts = [];
+
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+      cx = w / 2;
+      cy = h / 2;
+
+      createHeartParticles();
+      createFloatingDots();
+    }
+
+    function heartShape(t) {
+      const x = 16 * Math.pow(Math.sin(t), 3);
+      const y =
+        13 * Math.cos(t) -
+        5 * Math.cos(2 * t) -
+        2 * Math.cos(3 * t) -
+        Math.cos(4 * t);
+
+      return { x, y };
+    }
+
+    function createHeartParticles() {
+      heartParticles = [];
+      const scale = Math.min(w, h) * 0.018;
+
+      for (let t = 0; t < Math.PI * 2; t += 0.035) {
+        const point = heartShape(t);
+
+        for (let i = 0; i < 6; i++) {
+          const randomAngle = Math.random() * Math.PI * 2;
+          const randomDistance = Math.random() * 10;
+
+          heartParticles.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            targetX: point.x * scale + Math.cos(randomAngle) * randomDistance,
+            targetY: -point.y * scale + Math.sin(randomAngle) * randomDistance,
+            size: Math.random() * 2.4 + 1,
+            speed: Math.random() * 0.035 + 0.025,
+            alpha: Math.random() * 0.5 + 0.45,
+            angle: Math.random() * Math.PI * 2
+          });
+        }
+      }
+    }
+
+    function createFloatingDots() {
+      floatingDots = [];
+
+      for (let i = 0; i < 130; i++) {
+        floatingDots.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          size: Math.random() * 2.2 + 0.8,
+          speed: Math.random() * 0.35 + 0.08,
+          alpha: Math.random() * 0.35 + 0.08
+        });
+      }
+    }
+
+    function drawBackground() {
+      const gradient = ctx.createRadialGradient(cx, cy, 30, cx, cy, Math.max(w, h));
+      gradient.addColorStop(0, "rgba(255, 100, 165, 0.16)");
+      gradient.addColorStop(0.38, "rgba(255, 80, 150, 0.06)");
+      gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+    }
+
+    function drawFloatingDots() {
+      for (const dot of floatingDots) {
+        dot.y -= dot.speed;
+
+        if (dot.y < -10) {
+          dot.y = h + 10;
+          dot.x = Math.random() * w;
+        }
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255, 220, 235, ${dot.alpha})`;
+        ctx.arc(dot.x, dot.y, dot.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawHeartParticles(time) {
+      const pulse = 1 + Math.sin(time * 0.003) * 0.075;
+
+      for (const p of heartParticles) {
+        const targetX = cx + p.targetX * pulse;
+        const targetY = cy + p.targetY * pulse;
+
+        p.x += (targetX - p.x) * p.speed;
+        p.y += (targetY - p.y) * p.speed;
+
+        const shine = 0.65 + Math.sin(time * 0.008 + p.angle) * 0.35;
+        const size = p.size + Math.sin(time * 0.006 + p.angle) * 0.55;
+
+        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size * 6);
+        glow.addColorStop(0, `rgba(255, 245, 250, ${0.9 * shine})`);
+        glow.addColorStop(0.35, `rgba(255, 135, 185, ${0.75 * shine})`);
+        glow.addColorStop(1, "rgba(255, 70, 130, 0)");
+
+        ctx.beginPath();
+        ctx.fillStyle = glow;
+        ctx.arc(p.x, p.y, size * 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255, 230, 240, ${p.alpha})`;
+        ctx.arc(p.x, p.y, Math.max(1, size), 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawSparkles() {
+      for (let i = sparkles.length - 1; i >= 0; i--) {
+        const s = sparkles[i];
+
+        s.x += s.vx;
+        s.y += s.vy;
+        s.life -= 1;
+
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255, 240, 250, ${s.life / 40})`;
+        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (s.life <= 0) {
+          sparkles.splice(i, 1);
+        }
+      }
+    }
+
+    function drawClickHearts() {
+      for (let i = clickHearts.length - 1; i >= 0; i--) {
+        const heart = clickHearts[i];
+
+        heart.y += heart.vy;
+        heart.x += heart.vx;
+        heart.life -= 1;
+        heart.size += 0.15;
+
+        ctx.save();
+        ctx.globalAlpha = heart.life / 70;
+        ctx.font = heart.size + "px Microsoft JhengHei";
+        ctx.fillStyle = heart.color;
+        ctx.shadowColor = heart.color;
+        ctx.shadowBlur = 15;
+        ctx.fillText(heart.symbol, heart.x, heart.y);
+        ctx.restore();
+
+        if (heart.life <= 0) {
+          clickHearts.splice(i, 1);
+        }
+      }
+    }
+
+    function makeClickEffect(x, y) {
+      const symbols = ["♥", "♡", "✦", "✧", "❀"];
+
+      for (let i = 0; i < 22; i++) {
+        clickHearts.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 5,
+          vy: Math.random() * -4 - 1,
+          size: Math.random() * 18 + 14,
+          life: 70,
+          symbol: symbols[Math.floor(Math.random() * symbols.length)],
+          color: Math.random() > 0.5 ? "#ffd6e8" : "#ff7fb3"
+        });
+      }
+    }
+
+    function animate(time) {
+      ctx.clearRect(0, 0, w, h);
+
+      drawBackground();
+      drawFloatingDots();
+      drawHeartParticles(time);
+      drawSparkles();
+      drawClickHearts();
+
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener("resize", resize);
+
+    window.addEventListener("mousemove", function(event) {
+      for (let i = 0; i < 2; i++) {
+        sparkles.push({
+          x: event.clientX,
+          y: event.clientY,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: (Math.random() - 0.5) * 1.5,
+          size: Math.random() * 2 + 1,
+          life: 40
+        });
+      }
+    });
+
+    window.addEventListener("click", function(event) {
+      makeClickEffect(event.clientX, event.clientY);
+    });
+
+    btn.addEventListener("click", function(event) {
+      event.stopPropagation();
+
+      isOpen = !isOpen;
+
+      if (isOpen) {
+        blessing.classList.add("show");
+        btn.innerText = "收起祝福";
+      } else {
+        blessing.classList.remove("show");
+        btn.innerText = "打開祝福";
+      }
+
+      makeClickEffect(window.innerWidth / 2, window.innerHeight / 2);
+    });
+
+    resize();
+    animate(0);
+  </script>
+</body>
+</html>
