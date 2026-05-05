@@ -17,6 +17,7 @@
       background: radial-gradient(circle at top, #5b1638, #1b0613 55%, #070207);
       font-family: "Microsoft JhengHei", sans-serif;
       cursor: pointer;
+      touch-action: none;
     }
 
     canvas {
@@ -71,7 +72,7 @@
 
     #blessing.show {
       opacity: 1;
-      max-height: 220px;
+      max-height: 260px;
       transform: translateY(0);
     }
 
@@ -326,10 +327,23 @@
       }
     }
 
+    function makeSparkles(x, y) {
+      for (let i = 0; i < 3; i++) {
+        sparkles.push({
+          x: x,
+          y: y,
+          vx: (Math.random() - 0.5) * 1.5,
+          vy: (Math.random() - 0.5) * 1.5,
+          size: Math.random() * 2 + 1,
+          life: 40
+        });
+      }
+    }
+
     function makeClickEffect(x, y) {
       const symbols = ["♥", "♡", "✦", "✧", "❀"];
 
-      for (let i = 0; i < 22; i++) {
+      for (let i = 0; i < 24; i++) {
         clickHearts.push({
           x: x,
           y: y,
@@ -358,21 +372,24 @@
     window.addEventListener("resize", resize);
 
     window.addEventListener("mousemove", function(event) {
-      for (let i = 0; i < 2; i++) {
-        sparkles.push({
-          x: event.clientX,
-          y: event.clientY,
-          vx: (Math.random() - 0.5) * 1.5,
-          vy: (Math.random() - 0.5) * 1.5,
-          size: Math.random() * 2 + 1,
-          life: 40
-        });
-      }
+      makeSparkles(event.clientX, event.clientY);
     });
 
     window.addEventListener("click", function(event) {
       makeClickEffect(event.clientX, event.clientY);
     });
+
+    window.addEventListener("touchstart", function(event) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      makeClickEffect(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    window.addEventListener("touchmove", function(event) {
+      event.preventDefault();
+      const touch = event.touches[0];
+      makeSparkles(touch.clientX, touch.clientY);
+    }, { passive: false });
 
     btn.addEventListener("click", function(event) {
       event.stopPropagation();
@@ -389,6 +406,23 @@
 
       makeClickEffect(window.innerWidth / 2, window.innerHeight / 2);
     });
+
+    btn.addEventListener("touchstart", function(event) {
+      event.stopPropagation();
+      event.preventDefault();
+
+      isOpen = !isOpen;
+
+      if (isOpen) {
+        blessing.classList.add("show");
+        btn.innerText = "收起祝福";
+      } else {
+        blessing.classList.remove("show");
+        btn.innerText = "打開祝福";
+      }
+
+      makeClickEffect(window.innerWidth / 2, window.innerHeight / 2);
+    }, { passive: false });
 
     resize();
     animate(0);
